@@ -1,7 +1,7 @@
 import { useParams, useLocation } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getRobotByName, addRobotToFirestore, updateRobotInFirestore } from '../../../firebase'
+import { getRobotByName, addRobotToFirestore, updateRobotInFirestore } from '../../../firebase.js'
 import './Secondpage.css'
 
 function Secondpage () {

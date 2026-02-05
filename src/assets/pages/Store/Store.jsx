@@ -4,7 +4,7 @@ import robot1 from '../../interactive-toy-cyborg-robot-dog-260nw-2482131865.webp
 import robot2 from '../../pngtree-3d-render-of-blue-robot-character-png-image_1508576.jpg'
 import robot3 from '../../STEM_TOBBIE_THE_ROBOT_2_63def40e-9581-46ff-b86a-c56634134f4d.webp'
 import robot4 from '../../graident-ai-robot-vectorart_78370-4114.avif'
-import { getAllRobots, deleteAllRobotsFromFirestore } from '../../../firebase'
+import { getAllRobots, deleteAllRobotsFromFirestore } from '../../../firebase.js'
 import './Store.css'
 
 function Store () {
