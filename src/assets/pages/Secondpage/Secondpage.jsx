@@ -1,6 +1,8 @@
 import { useParams, useLocation } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import fixButtonIcon from '../../fix-icon.png'
+import { getRobotByName, addRobotToFirestore, updateRobotInFirestore } from '../../../firebase'
 import './Secondpage.css'
 
 function Secondpage () {
@@ -11,29 +13,54 @@ function Secondpage () {
     const [isNaming, setIsNaming] = useState(false)
     const [customName, setCustomName] = useState('')
     const [robotStatus, setRobotStatus] = useState('Broken') // 'Broken' or 'Fixed'
+    const [firestoreId, setFirestoreId] = useState(null)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         // Get robot from location state first (if coming from Store)
         if (location.state?.robotImage) {
-            const storedData = localStorage.getItem(`robot_${robotName}`)
-            if (storedData) {
-                const parsed = JSON.parse(storedData)
-                setDisplayRobot(parsed)
-                setRobotStatus(parsed.status || 'Broken')
-                setCustomName(parsed.customName || '')
-            } else {
-                setDisplayRobot({
-                    name: robotName,
-                    image: location.state.robotImage
-                })
+            const loadRobotData = async () => {
+                try {
+                    // Try to get existing robot data from Firestore
+                    const existingRobot = await getRobotByName(robotName)
+                    if (existingRobot) {
+                        setDisplayRobot(existingRobot)
+                        setRobotStatus(existingRobot.status || 'Broken')
+                        setCustomName(existingRobot.customName || '')
+                        setFirestoreId(existingRobot.id)
+                    } else {
+                        setDisplayRobot({
+                            name: robotName,
+                            image: location.state.robotImage
+                        })
+                    }
+                } catch (error) {
+                    console.error("Error loading robot data:", error)
+                    // Fallback to localStorage
+                    const storedData = localStorage.getItem(`robot_${robotName}`)
+                    if (storedData) {
+                        const parsed = JSON.parse(storedData)
+                        setDisplayRobot(parsed)
+                        setRobotStatus(parsed.status || 'Broken')
+                        setCustomName(parsed.customName || '')
+                    } else {
+                        setDisplayRobot({
+                            name: robotName,
+                            image: location.state.robotImage
+                        })
+                    }
+                } finally {
+                    setLoading(false)
+                }
             }
-            setFillPercentage(0)
+            loadRobotData()
         } else {
             // Otherwise, try to load from localStorage
             const savedRobot = localStorage.getItem('selectedRobot')
             if (savedRobot) {
                 setDisplayRobot(JSON.parse(savedRobot))
             }
+            setLoading(false)
         }
     }, [location, robotName])
 
@@ -47,7 +74,7 @@ function Secondpage () {
         }
     }
 
-    const handleSaveName = () => {
+    const handleSaveName = async () => {
         if (customName.trim()) {
             const robotData = {
                 name: displayRobot.name,
@@ -55,12 +82,34 @@ function Secondpage () {
                 customName: customName,
                 status: 'Fixed'
             }
-            localStorage.setItem(`robot_${displayRobot.name}`, JSON.stringify(robotData))
-            setRobotStatus('Fixed')
-            setIsNaming(false)
-            // Update displayRobot to show custom name
-            setDisplayRobot(robotData)
+            
+            try {
+                // Save to Firestore
+                if (firestoreId) {
+                    // Update existing robot
+                    await updateRobotInFirestore(firestoreId, robotData)
+                } else {
+                    // Add new robot to Firestore
+                    const newId = await addRobotToFirestore(robotData)
+                    setFirestoreId(newId)
+                }
+                
+                // Also save to localStorage for backup
+                localStorage.setItem(`robot_${displayRobot.name}`, JSON.stringify(robotData))
+                
+                setRobotStatus('Fixed')
+                setIsNaming(false)
+                // Update displayRobot to show custom name
+                setDisplayRobot(robotData)
+            } catch (error) {
+                console.error("Error saving robot:", error)
+                alert("Failed to save robot. Please try again.")
+            }
         }
+    }
+
+    if (loading) {
+        return <div className='secondpage-container'><h1>Loading...</h1></div>
     }
 
     return (
@@ -90,8 +139,9 @@ function Secondpage () {
                             <div className='progress-bar' style={{width: `${fillPercentage}%`}}></div>
                         </div>
                         <p>{fillPercentage}%</p>
-                        <button className='button-primary' onClick={handleFillButton} disabled={fillPercentage === 100}>
-                            {fillPercentage === 100 ? 'Ready to Name' : 'Repair'}
+                        <button className='button-primary fix-button' onClick={handleFillButton} disabled={fillPercentage === 100}>
+                            <img src={fixButtonIcon} alt="Fix" className='fix-button-icon' />
+                            <span>{fillPercentage === 100 ? 'Ready to Name' : 'Repair'}</span>
                         </button>
 
                         {isNaming && (

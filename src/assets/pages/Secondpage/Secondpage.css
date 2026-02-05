@@ -225,3 +225,22 @@
   margin: 10px 0;
   color: #155724;
 }
+/* Fix Button with Image */
+.fix-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 50px;
+}
+
+.fix-button-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.fix-button:hover .fix-button-icon {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}

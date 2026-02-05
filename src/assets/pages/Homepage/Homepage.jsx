@@ -1,6 +1,6 @@
 import {Link} from 'react-router-dom'
 import { useState } from 'react'
-import robot3 from '../../STEM_TOBBIE_THE_ROBOT_2_63def40e-9581-46ff-b86a-c56634134f4d.webp'
+import robot3 from '../../interactive-toy-cyborg-robot-dog-260nw-2482131865.webp'
 import './Homepage.css'
 
 function Homepage () {

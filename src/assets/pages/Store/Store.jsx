@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react'
 import robot1 from '../../interactive-toy-cyborg-robot-dog-260nw-2482131865.webp'
 import robot2 from '../../pngtree-3d-render-of-blue-robot-character-png-image_1508576.jpg'
 import robot3 from '../../STEM_TOBBIE_THE_ROBOT_2_63def40e-9581-46ff-b86a-c56634134f4d.webp'
-import robot4 from '../../react.svg'
+import robot4 from '../../graident-ai-robot-vectorart_78370-4114.avif'
+import { getAllRobots, deleteAllRobotsFromFirestore } from '../../../firebase'
 import './Store.css'
 
 function Store () {
     const [selectedRobot, setSelectedRobot] = useState(null)
     const [robotsData, setRobotsData] = useState({})
+    const [loading, setLoading] = useState(true)
 
     const robots = [
         { name: 'Robot 1', image: robot1 },
@@ -18,15 +20,34 @@ function Store () {
     ]
 
     useEffect(() => {
-        // Load robot data from localStorage
-        const data = {}
-        robots.forEach(robot => {
-            const storedData = localStorage.getItem(`robot_${robot.name}`)
-            if (storedData) {
-                data[robot.name] = JSON.parse(storedData)
+        // Load robot data from Firestore
+        const loadRobotsFromFirestore = async () => {
+            try {
+                const firestoreRobots = await getAllRobots()
+                const data = {}
+                firestoreRobots.forEach(robot => {
+                    data[robot.name] = {
+                        id: robot.id,
+                        ...robot
+                    }
+                })
+                setRobotsData(data)
+            } catch (error) {
+                console.error("Failed to load robots from Firestore:", error)
+                // Fallback to localStorage if Firestore fails
+                const data = {}
+                robots.forEach(robot => {
+                    const storedData = localStorage.getItem(`robot_${robot.name}`)
+                    if (storedData) {
+                        data[robot.name] = JSON.parse(storedData)
+                    }
+                })
+                setRobotsData(data)
+            } finally {
+                setLoading(false)
             }
-        })
-        setRobotsData(data)
+        }
+        loadRobotsFromFirestore()
     }, [])
 
     const handleRobotSelect = (robot) => {
@@ -46,6 +67,30 @@ function Store () {
             return robotsData[robotName].status || 'Broken'
         }
         return 'Broken'
+    }
+
+    const handleResetAllRobots = async () => {
+        // Confirm before resetting
+        if (window.confirm('Are you sure you want to reset all robots? This cannot be undone!')) {
+            try {
+                // Delete all robots from Firestore
+                await deleteAllRobotsFromFirestore()
+                
+                // Clear all robot data from localStorage
+                robots.forEach(robot => {
+                    localStorage.removeItem(`robot_${robot.name}`)
+                })
+                // Clear selected robot
+                localStorage.removeItem('selectedRobot')
+                // Reset state
+                setRobotsData({})
+                setSelectedRobot(null)
+                alert('All robots have been reset!')
+            } catch (error) {
+                console.error("Error resetting robots:", error)
+                alert('Failed to reset robots. Please try again.')
+            }
+        }
     }
 
     return (
@@ -86,6 +131,9 @@ function Store () {
                 <Link to="/">
                     <button className='button'>Go to Home</button>
                 </Link>
+                <button className='button-reset' onClick={handleResetAllRobots}>
+                    Reset All Robots
+                </button>
             </div>
         </div>
     )
