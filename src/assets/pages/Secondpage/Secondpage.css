@@ -238,6 +238,8 @@
   width: 30px;
   height: 30px;
   object-fit: contain;
+  stroke: white;
+  color: white;
 }
 
 .fix-button:hover .fix-button-icon {
